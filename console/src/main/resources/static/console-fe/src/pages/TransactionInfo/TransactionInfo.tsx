@@ -42,7 +42,7 @@ type TransactionInfoState = {
   loading: boolean;
   branchSessionDialogVisible: boolean;
   currentBranchSession: Array<any>;
-  globalSessionParam : GlobalSessionParam;~
+  globalSessionParam : GlobalSessionParam;
 }
 
 const statusList:Array<StatusType> = [

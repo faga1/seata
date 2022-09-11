@@ -1,22 +1,32 @@
 import request from '@/utils/request';
+import mockData from '../mock/clientInfo.json';
 
-export type GlobalSessionParam = {
-  clientId?: string,
+export type ClientInfoParam = {
+  resourceId?: string,
   applicationId?: string,
-  resourceId?: number,
   ip?: string,
-  port: boolean,
-  clientRole: number,
-  tansactionServiceGroup: number,
-  resourceSets?: number,
-  operator?: number
+  clientRole?: 'TMROLE'|'RMROLE',
+  pageSize: number,
+  pageNum: number
 };
 
-export default async function fetchData(params:GlobalSessionParam):Promise<any> {
-  let result = await request('/console/globalSession/query', {
-    method: 'get',
+interface offlineParams {
+  clientId: string,
+  resourceId: string,
+  clientRole: string
+}
+
+export default async function fetchData(params:ClientInfoParam):Promise<any> {
+  let result = await request('/console/client/query', {
+    method: 'post',
     params,
   });
-
+  return result;
+}
+export async function offline(params:offlineParams):Promise<any> {
+  const result = await request('/console/client/offline', {
+    method: 'delete',
+    params,
+  });
   return result;
 }

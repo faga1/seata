@@ -14,36 +14,46 @@
  * limitations under the License.
  */
  import React from 'react';
- import { ConfigProvider, Table, Button, DatePicker, Form, Icon, Switch, Pagination, Dialog, Input, Select } from '@alicloud/console-components';
+ import { ConfigProvider, Table, Button, DatePicker, Form, Icon, Switch, Pagination, Dialog, Input, Select, Dropdown, Menu } from '@alicloud/console-components';
  import Actions, { LinkButton } from '@alicloud/console-components-actions';
  import { withRouter } from 'react-router-dom';
  import Page from '../../components/Page';
  import { GlobalProps } from '../../module';
  import styled, { css } from 'styled-components';
- import getData, { GlobalSessionParam } from '../../service/transactionInfo';
  import PropTypes from 'prop-types';
  import moment from 'moment';
- 
- 
+import getData, { ClientInfoParam, offline } from '../../service/clientInfo';
+
+
  const { RangePicker } = DatePicker;
  const FormItem = Form.Item;
- 
+
  type StatusType = {
    label: string,
    value: number,
    iconType: string,
    iconColor: string,
  }
- 
+
+ type ClientInfoItem = {
+  clientId: string,
+  applicationId: string,
+  resourceId: string,
+  clientRole: string,
+  transactionServiceGroup: string,
+  resourceSets: Array<string>,
+  operator: string,
+ }
+
  type ClientInfoState = {
-   list: Array<any>;
+   list: Array<ClientInfoItem>;
    total: number;
    loading: boolean;
-   branchSessionDialogVisible: boolean;
    currentBranchSession: Array<any>;
-   globalSessionParam : GlobalSessionParam;
+   clientInfoParam: ClientInfoParam;
  }
- 
+
+
  const statusList:Array<StatusType> = [
    {
      label: 'AsyncCommitting',
@@ -154,7 +164,7 @@
      iconColor: '#FFA003',
    },
  ];
- 
+
  const branchSessionStatusList:Array<StatusType> = [
    {
      label: 'UnKnown',
@@ -223,63 +233,72 @@
      iconColor: '#FF3333',
    },
  ];
- 
+ interface ResourceSetItemProps {
+  data: string[]
+ }
+
+ const ResourceSetCell = (props:ResourceSetItemProps) => (
+  <Dropdown
+    trigger={<div style={{ textOverflow: 'ellipsis' }}>{props.data?.join(',')}</div>}
+  >
+    <Menu>
+      {props.data?.map(item => <Menu.Item key={item}>{item}</Menu.Item>)}
+    </Menu>
+  </Dropdown>
+ );
+
  class ClientInfo extends React.Component<GlobalProps, ClientInfoState> {
    static displayName = 'ClientInfo';
- 
+
    static propTypes = {
-     locale: PropTypes.object,
-     history: PropTypes.object,
+    locale: PropTypes.object,
    };
- 
+
    state: ClientInfoState = {
      list: [],
      total: 0,
      loading: false,
-     branchSessionDialogVisible: false,
      currentBranchSession: [],
-     globalSessionParam: {
-       withBranch: false,
+     clientInfoParam: {
        pageSize: 10,
        pageNum: 1,
      },
    };
- 
+
    componentDidMount = () => {
      // search once by default
      this.search();
    }
- 
+
    resetSearchFilter = () => {
      this.setState({
-       globalSessionParam: {
-         withBranch: false,
+       clientInfoParam: {
          // pagination info don`t reset
-         pageSize: this.state.globalSessionParam.pageSize,
-         pageNum: this.state.globalSessionParam.pageNum,
+         pageSize: this.state.clientInfoParam.pageSize,
+         pageNum: this.state.clientInfoParam.pageNum,
        },
      });
    }
- 
+
    search = () => {
      this.setState({ loading: true });
-     getData(this.state.globalSessionParam).then(data => {
+     getData(this.state.clientInfoParam).then(data => {
        // if the result set is empty, set the page number to go back to the first page
        if (data.total === 0) {
          this.setState({
            list: [],
            total: 0,
            loading: false,
-           globalSessionParam: Object.assign(this.state.globalSessionParam,
+           clientInfoParam: Object.assign(this.state.clientInfoParam,
              { pageNum: 1 }),
          });
          return;
        }
        // format time
-       data.data.forEach((element: any) => {
-         element.beginTime = (element.beginTime == null || element.beginTime === '') ? null : moment(Number(element.beginTime)).format('YYYY-MM-DD HH:mm:ss');
+       data.data.forEach((item: any) => {
+        item.ip = item.clientId.split(':')[1];
+        item.port = item.clientId.split(':')[2];
        });
- 
        this.setState({
          list: data.data,
          total: data.total,
@@ -287,151 +306,53 @@
        });
      }).catch(err => {
        this.setState({ loading: false });
-     });
+    });
    }
- 
+
    searchFilterOnChange = (key:string, val:string) => {
        this.setState({
-         globalSessionParam: Object.assign(this.state.globalSessionParam,
+         clientInfoParam: Object.assign(this.state.clientInfoParam,
            { [key]: val }),
        });
    }
- 
-   branchSessionSwitchOnChange = (checked: boolean, e: any) => {
-     this.setState({
-       globalSessionParam: Object.assign(this.state.globalSessionParam,
-         { withBranch: checked }),
-     });
-     if (checked) {
-       // if checked, do search for load branch sessions
-       this.search();
-     }
-   }
- 
+
+
    createTimeOnChange = (value: Array<any>) => {
      // timestamp(milliseconds)
      const timeStart = value[0] == null ? null : moment(value[0]).unix() * 1000;
      const timeEnd = value[1] == null ? null : moment(value[1]).unix() * 1000;
      this.setState({
-       globalSessionParam: Object.assign(this.state.globalSessionParam,
+       clientInfoParam: Object.assign(this.state.clientInfoParam,
          { timeStart, timeEnd }),
      });
    }
- 
-   statusCell = (val: number, index: number, record: any) => {
-     let icon;
-     statusList.forEach((status: StatusType) => {
-       if (status.value === val) {
-         icon = (
-           <span><Icon type={status.iconType} style={{ color: status.iconColor, marginRight: '10px' }} />{status.label}</span>
-         );
-       }
-     });
-     // Unmatched
-     if (icon === undefined) {
-       icon = (<span>{val}</span>);
-     }
-     return icon;
-   }
- 
-   branchSessionStatusCell = (val: number, index: number, record: any) => {
-     let icon;
-     branchSessionStatusList.forEach((status: StatusType) => {
-       if (status.value === val) {
-         icon = (
-           <span><Icon type={status.iconType} style={{ color: status.iconColor, marginRight: '10px' }} />{status.label}</span>
-         );
-       }
-     });
-     // Unmatched
-     if (icon === undefined) {
-       icon = (<span>{val}</span>);
-     }
-     return icon;
-   }
- 
-   operateCell = (val: string, index: number, record: any) => {
-     const { locale = {}, history } = this.props;
-     const {
-       showBranchSessionTitle,
-       showGlobalLockTitle,
-     } = locale;
-     return (
-       <Actions style={{ width: '200px' }}>
-         {/* {when withBranch false, hide 'View branch session' button} */}
-         {this.state.globalSessionParam.withBranch ? (
-           <LinkButton
-             onClick={this.showBranchSessionDialog(val, index, record)}
-           >
-           {showBranchSessionTitle}
-           </LinkButton>
-         ) : null}
- 
-         <LinkButton
-           onClick={() => {
-             history.push({
-               pathname: '/GlobalLockInfo',
-               // @ts-ignore
-               query: { xid: record.xid },
-             });
-           }}
-         >
-           {showGlobalLockTitle}
-         </LinkButton>
-       </Actions>);
-   }
- 
-   branchSessionDialogOperateCell = (val: string, index: number, record: any) => {
-     const { locale = {}, history } = this.props;
-     const {
-       showGlobalLockTitle,
-     } = locale;
-     return (
-       <Actions style={{ width: '80px' }}>
-         <LinkButton
-           onClick={() => {
-             history.push({
-               pathname: '/GlobalLockInfo',
-               // @ts-ignore
-               query: { xid: record.xid },
-             });
-           }}
-         >
-           {showGlobalLockTitle}
-         </LinkButton>
-       </Actions>);
-   }
- 
+
    paginationOnChange = (current: number, e: {}) => {
      this.setState({
-       globalSessionParam: Object.assign(this.state.globalSessionParam,
+       clientInfoParam: Object.assign(this.state.clientInfoParam,
          { pageNum: current }),
      });
      this.search();
    }
- 
+
    paginationOnPageSizeChange = (pageSize: number) => {
      this.setState({
-       globalSessionParam: Object.assign(this.state.globalSessionParam,
-         { pageSize }),
+       clientInfoParam: Object.assign(this.state.clientInfoParam,
+        { pageSize }),
      });
      this.search();
    }
- 
-   showBranchSessionDialog = (val: string, index: number, record: any) => () => {
-       this.setState({
-         branchSessionDialogVisible: true,
-         currentBranchSession: record.branchSessionVOs,
-       });
-   }
- 
-   closeBranchSessionDialog = () => {
-     this.setState({
-       branchSessionDialogVisible: false,
-       currentBranchSession: [],
-     });
-   }
- 
+
+    operatorOnclick = async (record:any) => {
+      const res = await offline({
+        clientId: record.clientId,
+        resourceId: record.resourceId,
+        clientRole: record.clientRole,
+      });
+
+      if (res.data.data === '200') this.search();
+    }
+
    render() {
      const { locale = {} } = this.props;
      const { title, subTitle, createTimeLabel,
@@ -479,6 +400,7 @@
            </FormItem>
            <FormItem name="clientRole" label="clientRole">
              <Select
+               dataSource={[{ value: 'TMROLE', label: 'TMROLE' }, { value: 'RMROLE', label: 'RMROLE' }]}
                placeholder={inputFilterPlaceholder}
                onChange={(value: string) => { this.searchFilterOnChange('clientRole', value); }}
              />
@@ -504,54 +426,25 @@
            <Table.Column title="resourceId" dataIndex="resourceId" />
            <Table.Column title="ip" dataIndex="ip" />
            <Table.Column title="port" dataIndex="port" />
-
-           {/* <Table.Column
-             title="status"
-             dataIndex="status"
-             cell={this.statusCell}
-           /> */}
            <Table.Column title="clientRole" dataIndex="clientRole" />
-           <Table.Column title="tansactionServiceGroup" dataIndex="tansactionServiceGroup" />
-           <Table.Column title="resourceSets" dataIndex="resourceSets" />
-           <Table.Column title="operator" dataIndex="operator" />
+           <Table.Column title="transactionServiceGroup" dataIndex="transactionServiceGroup" />
+           <Table.Column title="resourceSets" dataIndex="resourceSets" cell={(value:string[]) => <ResourceSetCell data={value} />} />
+           <Table.Column title="operator" dataIndex="operator" cell={(a, b, record:any) => <a onClick={() => this.operatorOnclick(record)}>offline</a>}/>
          </Table>
          <Pagination
            total={this.state.total}
            defaultCurrent={1}
-           current={this.state.globalSessionParam.pageNum}
+           current={this.state.clientInfoParam.pageNum}
            onChange={this.paginationOnChange}
-           pageSize={this.state.globalSessionParam.pageSize}
+           pageSize={this.state.clientInfoParam.pageSize}
            pageSizeSelector="dropdown"
            pageSizeList={[10, 20, 30, 40, 50]}
            onPageSizeChange={this.paginationOnPageSizeChange}
          />
          </div>
- 
-         {/* branch session dialog */}
-         {/* <Dialog visible={this.state.branchSessionDialogVisible} title={branchSessionDialogTitle} footer={false} onClose={this.closeBranchSessionDialog} style={{ overflowX: 'auto' }}>
-           <Table dataSource={this.state.currentBranchSession}>
-             <Table.Column title="transactionId" dataIndex="transactionId" />
-             <Table.Column title="branchId" dataIndex="branchId" />
-             <Table.Column title="resourceGroupId" dataIndex="resourceGroupId" />
-             <Table.Column title="branchType" dataIndex="branchType" />
-             <Table.Column
-               title="status"
-               dataIndex="status"
-               cell={this.branchSessionStatusCell}
-             />
-             <Table.Column title="resourceId" dataIndex="resourceId" />
-             <Table.Column title="clientId" dataIndex="clientId" />
-             <Table.Column title="applicationData" dataIndex="applicationData" />
-             <Table.Column
-               title={operateTitle}
-               cell={this.branchSessionDialogOperateCell}
-             />
-           </Table>
-         </Dialog> */}
        </Page>
      );
    }
  }
- 
+
  export default withRouter(ConfigProvider.config(ClientInfo, {}));
- 
