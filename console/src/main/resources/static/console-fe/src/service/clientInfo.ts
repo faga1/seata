@@ -1,5 +1,4 @@
 import request from '@/utils/request';
-import mockData from '../mock/clientInfo.json';
 
 export type ClientInfoParam = {
   resourceId?: string,
@@ -18,7 +17,7 @@ interface offlineParams {
 
 export default async function fetchData(params:ClientInfoParam):Promise<any> {
   let result = await request('/console/client/query', {
-    method: 'post',
+    method: 'get',
     params,
   });
   return result;

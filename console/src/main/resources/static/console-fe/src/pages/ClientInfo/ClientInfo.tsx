@@ -14,26 +14,16 @@
  * limitations under the License.
  */
  import React from 'react';
- import { ConfigProvider, Table, Button, DatePicker, Form, Icon, Switch, Pagination, Dialog, Input, Select, Dropdown, Menu } from '@alicloud/console-components';
- import Actions, { LinkButton } from '@alicloud/console-components-actions';
+ import { ConfigProvider, Table, DatePicker, Form, Icon, Pagination, Input, Select, Dropdown, Menu } from '@alicloud/console-components';
  import { withRouter } from 'react-router-dom';
  import Page from '../../components/Page';
  import { GlobalProps } from '../../module';
- import styled, { css } from 'styled-components';
  import PropTypes from 'prop-types';
  import moment from 'moment';
 import getData, { ClientInfoParam, offline } from '../../service/clientInfo';
 
 
- const { RangePicker } = DatePicker;
  const FormItem = Form.Item;
-
- type StatusType = {
-   label: string,
-   value: number,
-   iconType: string,
-   iconColor: string,
- }
 
  type ClientInfoItem = {
   clientId: string,
@@ -53,186 +43,6 @@ import getData, { ClientInfoParam, offline } from '../../service/clientInfo';
    clientInfoParam: ClientInfoParam;
  }
 
-
- const statusList:Array<StatusType> = [
-   {
-     label: 'AsyncCommitting',
-     value: 8,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'Begin',
-     value: 1,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'Committing',
-     value: 2,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'CommitRetrying',
-     value: 3,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'Committed',
-     value: 9,
-     iconType: 'success',
-     iconColor: '#1DC11D',
-   },
-   {
-     label: 'CommitFailed',
-     value: 10,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'CommitRetryTimeout',
-     value: 16,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'Finished',
-     value: 15,
-     iconType: 'success',
-     iconColor: '#1DC11D',
-   },
-   {
-     label: 'Rollbacking',
-     value: 4,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'RollbackRetrying',
-     value: 5,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'Rollbacked',
-     value: 11,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'RollbackFailed',
-     value: 12,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'RollbackRetryTimeout',
-     value: 17,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'TimeoutRollbacking',
-     value: 6,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'TimeoutRollbackRetrying',
-     value: 7,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'TimeoutRollbacked',
-     value: 13,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'TimeoutRollbackFailed',
-     value: 14,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'UnKnown',
-     value: 0,
-     iconType: 'warning',
-     iconColor: '#FFA003',
-   },
- ];
-
- const branchSessionStatusList:Array<StatusType> = [
-   {
-     label: 'UnKnown',
-     value: 0,
-     iconType: 'warning',
-     iconColor: '#FFA003',
-   },
-   {
-     label: 'Registered',
-     value: 1,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'PhaseOne_Done',
-     value: 2,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'PhaseOne_Failed',
-     value: 3,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'PhaseOne_Timeout',
-     value: 4,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'PhaseTwo_Committed',
-     value: 5,
-     iconType: 'success',
-     iconColor: '#1DC11D',
-   },
-   {
-     label: 'PhaseTwo_CommitFailed_Retryable',
-     value: 6,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'PhaseTwo_CommitFailed_Unretryable',
-     value: 7,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'PhaseTwo_Rollbacked',
-     value: 8,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
-   {
-     label: 'PhaseTwo_RollbackFailed_Retryable',
-     value: 9,
-     iconType: 'ellipsis',
-     iconColor: 'rgb(3, 193, 253)',
-   },
-   {
-     label: 'PhaseTwo_RollbackFailed_Unretryable',
-     value: 10,
-     iconType: 'error',
-     iconColor: '#FF3333',
-   },
- ];
  interface ResourceSetItemProps {
   data: string[]
  }
@@ -355,14 +165,10 @@ import getData, { ClientInfoParam, offline } from '../../service/clientInfo';
 
    render() {
      const { locale = {} } = this.props;
-     const { title, subTitle, createTimeLabel,
-       selectFilerPlaceholder,
+     const { title, subTitle,
        inputFilterPlaceholder,
-       branchSessionSwitchLabel,
        resetButtonLabel,
        searchButtonLabel,
-       operateTitle,
-       branchSessionDialogTitle,
      } = locale;
      return (
        <Page
