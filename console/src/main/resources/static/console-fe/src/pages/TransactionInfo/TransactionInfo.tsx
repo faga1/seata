@@ -459,13 +459,16 @@ class TransactionInfo extends React.Component<GlobalProps, TransactionInfoState>
       >
         {/* search form */}
         <Form inline labelAlign="left">
-          {/* {search filters} */}
-          <FormItem name="resourceId" label="resourceId">
-            <Input
-              placeholder={inputFilterPlaceholder}
-              onChange={(value: string) => { this.searchFilterOnChange('resourceId', value); }}
+          {/* {create time picker} */}
+          <FormItem name="createTime" label={createTimeLabel}>
+            <RangePicker
+              onChange={this.createTimeOnChange}
+              onOk={this.createTimeOnChange}
+              showTime
+              format="YYYY-MM-DD"
             />
           </FormItem>
+          {/* {search filters} */}
           <FormItem name="xid" label="xid">
             <Input
               placeholder={inputFilterPlaceholder}
