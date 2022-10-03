@@ -160,7 +160,7 @@ import getData, { ClientInfoParam, offline } from '../../service/clientInfo';
         clientRole: record.clientRole,
       });
 
-      if (res.data.code === '200') this.search();
+      if (res.code === '200') this.search();
     }
 
    render() {
